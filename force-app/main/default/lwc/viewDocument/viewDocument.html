@@ -1,5 +1,5 @@
 <template>
-    <lightning-card title="KYC Documents Preview" icon-name="standard:file">
+    <lightning-card title="KYC Documents" icon-name="standard:file">
         <div class="slds-card__body slds-p-around_medium">
             <!-- Loading State -->
             <template if:true={isLoading}>
@@ -16,77 +16,111 @@
                 </div>
             </template>
 
-            <!-- Documents Loaded -->
-            <template if:false={isLoading}>
-                <div class="slds-grid slds-grid_vertical-align-center">
-                    <div class="slds-col slds-size_8-of-12">
-                        <div class="slds-text-body_regular">
-                            <strong>{documentCount}</strong> Document(s) Available
-                        </div>
-                    </div>
-                    <div class="slds-col slds-size_4-of-12 slds-text-align_right">
-                        <button class="slds-button slds-button_brand" 
-                                onclick={handlePreviewAll}
-                                disabled={noDocuments}>
-                            Preview All Documents
-                        </button>
-                    </div>
+            <!-- Documents Grid - Always Visible -->
+            <template if:true={hasDocuments}>
+                <div class="slds-text-body_regular slds-m-bottom_medium">
+                    <strong>{documents.length}</strong> Document(s) Available - Click any document to view in detail
                 </div>
-
-                <!-- Quick Document Thumbnails -->
-                <template if:true={hasDocuments}>
-                    <div class="slds-grid slds-wrap slds-m-top_small">
-                        <template for:each={documents} for:item="doc" for:index="index">
-                            <div key={doc.DocumentId} class="slds-col slds-size_3-of-12 slds-p-around_xx-small">
-                                <div class="slds-card slds-card_boundary">
-                                    <div class="slds-card__body slds-text-align_center slds-p-around_x-small">
-                                        <div class="file-icon-container">
-                                            <lightning-icon
-                                                icon-name={doc.iconName}
-                                                size="large"
-                                                alternative-text={doc.DocumentType}>
-                                            </lightning-icon>
+                
+                <!-- Documents Grid -->
+                <div class="documents-grid">
+                    <template for:each={documents} for:item="doc" for:index="index">
+                        <div key={doc.DocumentId} 
+                             class="document-grid-item" 
+                             data-index={index}
+                             onclick={openDocumentViewer}>
+                            <div class="document-preview-content">
+                                <!-- Show actual file content -->
+                                <template if:true={doc.hasFile}>
+                                    <!-- Show Image Directly -->
+                                    <template if:true={doc.isImage}>
+                                        <div class="grid-image-preview">
+                                            <img src={doc.FilePreviewUrl} 
+                                                 alt={doc.Title}
+                                                 class="grid-preview-image"
+                                                 onload={handleImageLoad}
+                                                 onerror={handleImageError}>
                                         </div>
-                                        <div class="slds-text-title slds-m-top_xx-small slds-truncate" title={doc.Title}>
-                                            {doc.Title}
+                                    </template>
+                                    
+                                    <!-- Show PDF using Google Docs Viewer -->
+                                    <template if:true={doc.isPdf}>
+                                        <div class="grid-pdf-preview">
+                                            <iframe src={doc.FilePreviewUrl} 
+                                                    class="grid-pdf-embed"
+                                                    title={doc.Title}>
+                                            </iframe>
                                         </div>
-                                        <div class="slds-text-body_small slds-text-color_weak slds-truncate">
-                                            {doc.DocumentType}
-                                        </div>
-                                        <div class="slds-text-body_small slds-text-color_weak">
-                                            <template if:true={doc.hasFile}>
-                                                {doc.FileExtension} • {doc.FormattedSize}
+                                    </template>
+                                    
+                                    <!-- Show other files in iframe -->
+                                    <template if:true={doc.hasFile}>
+                                        <template if:false={doc.isImage}>
+                                            <template if:false={doc.isPdf}>
+                                                <div class="grid-file-preview">
+                                                    <iframe src={doc.FilePreviewUrl} 
+                                                            class="grid-file-embed"
+                                                            title={doc.Title}>
+                                                    </iframe>
+                                                </div>
                                             </template>
-                                            <template if:false={doc.hasFile}>
-                                                {doc.Status}
-                                            </template>
+                                        </template>
+                                    </template>
+                                </template>
+                                
+                                <!-- Show placeholder if no file available -->
+                                <template if:false={doc.hasFile}>
+                                    <div class="grid-file-placeholder">
+                                        <lightning-icon
+                                            icon-name={doc.iconName}
+                                            size="large"
+                                            alternative-text={doc.DocumentType}>
+                                        </lightning-icon>
+                                        <div class="slds-text-body_small slds-m-top_xx-small slds-text-align_center">
+                                            File not available
                                         </div>
+                                    </div>
+                                </template>
+                                
+                                <!-- File info -->
+                                <div class="grid-file-info">
+                                    <div class="slds-text-body_small slds-truncate slds-text-align_center" title={doc.Title}>
+                                        {doc.Title}
+                                    </div>
+                                    <div class="slds-text-body_small slds-text-color_weak slds-truncate">
+                                        {doc.DocumentType}
+                                    </div>
+                                    <div class="slds-text-body_small slds-text-color_weak">
+                                        <template if:true={doc.hasFile}>
+                                            {doc.FileExtension} • {doc.FormattedSize}
+                                        </template>
+                                        <template if:false={doc.hasFile}>
+                                            {doc.Status}
+                                        </template>
                                     </div>
                                 </div>
                             </div>
-                        </template>
-                    </div>
-                </template>
-
-                <!-- No Documents Message -->
-                <template if:true={noDocuments}>
-                    <div class="slds-align_absolute-center slds-m-top_medium">
-                        <div class="slds-text-body_regular slds-text-color_weak">
-                            No documents found for this account.
                         </div>
+                    </template>
+                </div>
+            </template>
+
+            <!-- No Documents Message -->
+            <template if:true={noDocuments}>
+                <div class="slds-align_absolute-center slds-m-top_medium">
+                    <div class="slds-text-body_regular slds-text-color_weak">
+                        No documents found for this account.
                     </div>
-                </template>
+                </div>
             </template>
         </div>
     </lightning-card>
 
-    <!-- Document Viewer Modal -->
+    <!-- Single Document Viewer Modal - Opens when user clicks a grid item -->
     <template if:true={isViewerOpen}>
         <section class={viewerClass}>
-            
-            <!-- Header -->
             <div class="slds-modal__header">
-                <h2 class="slds-text-heading_medium">Documents Viewer</h2>
+                <h2 class="slds-text-heading_medium">Document Viewer</h2>
                 <div class="slds-grid slds-grid_align-spread slds-size_2-of-3">
                     <span class="slds-text-title slds-m-right_medium">{documentCounter}</span>
                     <span class="slds-text-title slds-truncate" if:true={currentDocument}>
@@ -94,7 +128,6 @@
                     </span>
                 </div>
                 <div class="header-actions">
-                    <!-- UPDATED: Dynamic fullscreen button -->
                     <button class="slds-button slds-button_icon slds-button_icon-border-filled" 
                             onclick={toggleFullscreen}
                             title={fullscreenTitle}>
@@ -108,7 +141,6 @@
                 </div>
             </div>
 
-            <!-- Content -->
             <div class="slds-modal__content slds-p-around_medium">
                 <div class="viewer-container">
                     <!-- Navigation Left -->
@@ -123,94 +155,7 @@
 
                     <!-- Document Preview -->
                     <div class="preview-section">
-                        <div class="document-preview">
-                            <template if:true={currentDocument}>
-                                <div class="file-preview-container">
-                                    <!-- Show actual file if available -->
-                                    <template if:true={currentDocument.hasFile}>
-                                        <div class="file-preview-header">
-                                            <div class="slds-text-heading_small slds-m-bottom_small">
-                                                {currentDocument.Title}
-                                            </div>
-                                            <div class="slds-text-body_small slds-text-color_weak">
-                                                {currentDocument.DocumentType} • {currentDocument.FileExtension} • {currentDocument.FormattedSize}
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Show Image Directly -->
-                                        <template if:true={currentDocument.isImage}>
-                                            <div class="image-preview-container">
-                                                <img src={currentDocument.FilePreviewUrl} 
-                                                     alt={currentDocument.Title}
-                                                     class="preview-image"
-                                                     onload={handleImageLoad}
-                                                     onerror={handleImageError}>
-                                            </div>
-                                        </template>
-                                        
-                                        <!-- Show PDF using Google Docs Viewer -->
-                                        <template if:true={currentDocument.isPdf}>
-                                            <div class="pdf-preview-container">
-                                                <iframe src={currentDocument.FilePreviewUrl} 
-                                                        class="pdf-embed"
-                                                        title={currentDocument.Title}>
-                                                </iframe>
-                                            </div>
-                                        </template>
-                                        
-                                        <!-- Show other files in iframe -->
-                                        <template if:true={currentDocument.hasFile}>
-                                            <template if:false={currentDocument.isImage}>
-                                                <template if:false={currentDocument.isPdf}>
-                                                    <div class="file-embed-container">
-                                                        <iframe src={currentDocument.FilePreviewUrl} 
-                                                                class="file-embed"
-                                                                title={currentDocument.Title}>
-                                                        </iframe>
-                                                    </div>
-                                                </template>
-                                            </template>
-                                        </template>
-                                        
-                                        <div class="slds-m-top_medium slds-text-align_center">
-                                            <a href={currentDocument.DownloadUrl} 
-                                               target="_blank" 
-                                               class="slds-button slds-button_brand">
-                                                Download Original File
-                                            </a>
-                                        </div>
-                                    </template>
-                                    
-                                    <!-- Show metadata only if no file available -->
-                                    <template if:false={currentDocument.hasFile}>
-                                        <div class="file-preview-large">
-                                            <lightning-icon
-                                                icon-name={currentDocument.iconName}
-                                                size="large"
-                                                alternative-text={currentDocument.DocumentType}>
-                                            </lightning-icon>
-                                            <div class="slds-text-heading_medium slds-m-top_medium slds-text-align_center">
-                                                {currentDocument.Title}
-                                            </div>
-                                            <div class="slds-text-body_regular slds-m-top_small slds-text-align_center">
-                                                <strong>Type:</strong> {currentDocument.DocumentType}
-                                            </div>
-                                            <div class="slds-text-body_regular slds-m-top_x-small slds-text-align_center">
-                                                <strong>Status:</strong> {currentDocument.Status}
-                                            </div>
-                                            <div class="slds-text-body_regular slds-m-top_x-small slds-text-align_center">
-                                                <strong>Description:</strong> {currentDocument.Description}
-                                            </div>
-                                            <div class="slds-m-top_medium slds-text-align_center">
-                                                <div class="slds-notify slds-notify_alert slds-theme_warning">
-                                                    File not available for preview
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </template>
-                        </div>
+                        <!-- Your existing single document preview code here -->
                     </div>
 
                     <!-- Navigation Right -->
@@ -224,32 +169,30 @@
                     </div>
                 </div>
 
-                <!-- Document Thumbnail Strip -->
-                <template if:true={hasDocuments}>
-                    <div class="thumbnail-strip slds-m-top_medium">
-                        <div class="slds-grid slds-grid_vertical-align-center slds-wrap">
-                            <template for:each={thumbnailItems} for:item="thumbItem">
-                                <div key={thumbItem.key} 
-                                     class="slds-col slds-size_2-of-12 slds-p-around_xx-small">
-                                    <div class={thumbItem.className}
-                                         data-index={thumbItem.index}
-                                         onclick={jumpToDocument}>
-                                        <div class="file-icon-container-small">
-                                            <lightning-icon
-                                                icon-name={thumbItem.doc.iconName}
-                                                size="small"
-                                                alternative-text={thumbItem.doc.DocumentType}>
-                                            </lightning-icon>
-                                        </div>
-                                        <div class="slds-text-body_small slds-truncate slds-m-top_xx-small">
-                                            Doc {thumbItem.displayNumber}
-                                        </div>
+                <!-- Thumbnail Strip -->
+                <div class="thumbnail-strip slds-m-top_medium">
+                    <div class="slds-grid slds-grid_vertical-align-center slds-wrap">
+                        <template for:each={thumbnailItems} for:item="thumbItem">
+                            <div key={thumbItem.key} 
+                                class="slds-col slds-size_2-of-12 slds-p-around_xx-small">
+                                <div class={thumbItem.className}
+                                    data-index={thumbItem.index}
+                                    onclick={jumpToDocument}>
+                                    <div class="file-icon-container-small">
+                                        <lightning-icon
+                                            icon-name={thumbItem.doc.iconName}
+                                            size="small"
+                                            alternative-text={thumbItem.doc.DocumentType}>
+                                        </lightning-icon>
+                                    </div>
+                                    <div class="slds-text-body_small slds-truncate slds-m-top_xx-small">
+                                        Doc {thumbItem.displayNumber}
                                     </div>
                                 </div>
-                            </template>
-                        </div>
+                            </div>
+                        </template>
                     </div>
-                </template>
+                </div>
             </div>
         </section>
         <div class="slds-backdrop slds-backdrop_open"></div>
