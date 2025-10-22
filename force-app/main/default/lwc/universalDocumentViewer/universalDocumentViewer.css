@@ -1,0 +1,478 @@
+/* Documents Grid Styles */
+.documents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.document-grid-item {
+    border: 1px solid #dddbda;
+    border-radius: 0.5rem;
+    background: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    overflow: hidden;
+    height: 380px; /* Reduced height */
+    display: flex;
+    flex-direction: column;
+}
+
+.document-grid-item:hover {
+    border-color: #f0ab1e;
+    box-shadow: 0 4px 12px rgba(1, 118, 211, 0.2);
+    transform: translateY(-2px);
+}
+
+.document-preview-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    flex: 1;
+}
+
+/* Grid preview styles - UPDATED: Full width & more height for images */
+.grid-image-preview {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f8f8f8;
+    min-height: 330px; /* Increased height */
+    max-height: 340px; /* Increased height */
+    overflow: hidden;
+    padding: 0; /* Remove padding for full width */
+    width: 100%; /* Full width */
+    padding-top: 10px;
+}
+
+.grid-preview-image {
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    object-fit: contain;
+    display: block;
+}
+
+.grid-pdf-preview {
+    flex: 1;
+    min-height: 240px; /* Increased height */
+    max-height: 270px; /* Increased height */
+    width: 100%; /* Full width */
+}
+
+.grid-pdf-embed {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.grid-file-preview {
+    flex: 1;
+    min-height: 240px; /* Increased height */
+    max-height: 270px; /* Increased height */
+    width: 100%; /* Full width */
+}
+
+.grid-file-embed {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.grid-file-placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #f8f8f8;
+    min-height: 240px; /* Increased height */
+    max-height: 270px; /* Increased height */
+    padding: 1rem;
+    width: 100%; /* Full width */
+}
+
+/* File info - REDUCED spacing */
+.grid-file-info {
+    padding: 0.5rem 0.75rem;
+    background: white;
+    flex-shrink: 0;
+    display: flex; /* Add flex display */
+    justify-content: space-between; /* Space between title and type */
+    align-items: center; /* Vertically center */
+    gap: 1rem; /* Space between elements */
+}
+
+.grid-file-info .slds-text-body_small {
+    margin-bottom: 0; /* Remove bottom margin */
+    line-height: 1.2;
+    flex: 1; /* Allow both to take equal space */
+    min-width: 0; /* Allow truncation to work */
+}
+
+/* Title - left aligned */
+.grid-file-info .slds-text-body_small:first-child {
+    text-align: left;
+    font-weight: 600; /* Make title slightly bolder */
+}
+
+/* Document Type - right aligned with weaker color */
+.grid-file-info .slds-text-body_small:last-child {
+    text-align: right;
+    color: #706e6b;
+    font-weight: bold;
+    flex-shrink: 0; /* Don't shrink the type */
+}
+
+/* Header actions */
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* File icon containers */
+.file-icon-container {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.file-icon-container-small {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Modal backdrop */
+.slds-modal__container {
+    position: relative;
+}
+
+.slds-modal__content {
+    overflow: auto;
+    background: #ffffff;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.zoom-view-fullscreen .slds-modal__content {
+    padding: 0;
+}
+
+/* Loading animation for images */
+.preview-image.loading {
+    opacity: 0.7;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Focus styles for accessibility */
+.thumbnail-item:focus {
+    outline: 2px solid #f0ab1e;
+    outline-offset: 2px;
+}
+
+button:focus {
+    outline: 2px solid #f0ab1e;
+    outline-offset: 2px;
+}
+
+/* Zoom View Styles - CENTERED (UNCHANGED) */
+.zoom-view-normal {
+    width: 80%;
+    max-width: 1200px;
+    min-height: 80vh;
+    max-height: 100vh;
+    position: fixed;
+    left: 50%;
+    top: 40%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+}
+
+.zoom-view-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    margin: 0;
+    border-radius: 0;
+}
+
+.zoom-view-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 90vh;
+}
+
+.zoom-nav-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.zoom-preview-section {
+    flex: 8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+
+.zoom-document-preview {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.zoom-file-preview-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Zoom Image Preview (UNCHANGED) */
+.zoom-image-preview {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #FFFFFF;
+    border-radius: 8px;
+    padding: 2rem;
+}
+
+.zoom-preview-image {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Zoom PDF Preview (UNCHANGED) */
+.zoom-pdf-preview {
+    width: 100%;
+    height: 100%;
+    border: 1px solid #dddbda;
+    border-radius: 4px;
+}
+
+.zoom-pdf-embed {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Zoom File Preview for other types (UNCHANGED) */
+.zoom-file-preview {
+    width: 100%;
+    height: 100%;
+    border: 1px solid #dddbda;
+    border-radius: 4px;
+}
+
+.zoom-file-embed {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Zoom Placeholder (UNCHANGED) */
+.zoom-file-placeholder {
+    text-align: center;
+    padding: 2rem;
+    background: #f8f8f8;
+    border-radius: 8px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Fullscreen specific styles (UNCHANGED) */
+.zoom-view-fullscreen .zoom-image-preview {
+    padding: 3rem;
+    background: #FFFFFF;
+    justify-content: center;
+}
+
+.zoom-view-fullscreen .zoom-preview-image {
+    max-width: 95%;
+    max-height: 95%;
+    width: auto;
+    height: auto;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .documents-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .document-grid-item {
+        margin-bottom: 1rem;
+        height: 280px;
+    }
+    
+    .grid-image-preview,
+    .grid-pdf-preview,
+    .grid-file-preview,
+    .grid-file-placeholder {
+        min-height: 200px;
+        max-height: 220px;
+    }
+    
+    .grid-file-info {
+        padding: 0.4rem 0.6rem;
+    }
+    
+    .zoom-view-normal {
+        width: 95%;
+        max-height: 80vh;
+    }
+    
+    .zoom-view-container {
+        height: 60vh;
+        flex-direction: column;
+    }
+    
+    .zoom-nav-section {
+        flex: none;
+        margin: 1rem 0;
+    }
+    
+    .zoom-preview-section {
+        flex: none;
+        width: 100%;
+        height: auto;
+    }
+    
+    .zoom-image-preview {
+        padding: 1rem;
+    }
+}
+
+/* Ensure proper image display in grid */
+.grid-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* Card content alignment */
+.document-preview-content {
+    justify-content: space-between;
+}
+
+/* Text truncation utilities */
+.slds-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Color utilities */
+.slds-text-color_weak {
+    color: #706e6b;
+}
+
+
+/* Header info row styling */
+.slds-grid.slds-grid_align-spread.slds-size_2-of-3 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 1rem;
+}
+
+.slds-grid.slds-grid_align-spread.slds-size_2-of-3 .slds-text-title {
+    flex: 1;
+    min-width: 0; /* Allow truncation */
+}
+
+.slds-grid.slds-grid_align-spread.slds-size_2-of-3 .slds-text-title:first-child {
+    text-align: left;
+    flex-shrink: 0; /* Don't shrink the counter */
+    white-space: nowrap;
+}
+
+.slds-grid.slds-grid_align-spread.slds-size_2-of-3 .slds-text-title:last-child {
+    text-align: right;
+    flex: 1; /* Take available space */
+}
+
+.slds-grid.slds-grid_align-spread.slds-size_2-of-3 .slds-text-title:last-child h2 {
+    margin: 0;
+    font-weight: bold;
+    text-align: right;
+    font-size: 1rem; /* Match slds-text-title size */
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* Spacing utilities */
+.slds-m-top_xx-small {
+    margin-top: 0.25rem;
+}
+
+.slds-m-top_x-small {
+    margin-top: 0.5rem;
+}
+
+.slds-m-top_small {
+    margin-top: 0.75rem;
+}
+
+.slds-m-top_medium {
+    margin-top: 1rem;
+    height: 100vh;
+}
+
+.slds-m-bottom_medium {
+    margin-bottom: 1rem;
+}
+
+.slds-p-around_medium {
+    padding: 1rem;
+}
+
+.slds-p-around_x-small {
+    padding: 0.5rem;
+}
+
+.slds-p-around_xx-small {
+    padding: 0.25rem;
+}

@@ -6,7 +6,7 @@ export default class ViewDocument extends LightningElement {
     @track documents = [];
     @track isLoading = false;
     @track error;
-    @track isViewerOpen = false;
+    @track isZoomViewOpen = false; // Changed from isViewerOpen to isZoomViewOpen
     @track currentIndex = 0;
     @track isFullscreen = false;
 
@@ -52,23 +52,23 @@ export default class ViewDocument extends LightningElement {
         });
     }
 
-    // Open single document viewer when user clicks on a grid item
-    openDocumentViewer(event) {
+    // Open zoom view when user clicks on a grid item
+    openZoomView(event) {
         const index = parseInt(event.currentTarget.dataset.index);
         if (index >= 0 && index < this.documents.length) {
             this.currentIndex = index;
-            this.isViewerOpen = true;
+            this.isZoomViewOpen = true;
             this.isFullscreen = false;
             document.addEventListener('keydown', this.boundHandleKeyPress);
         }
     }
 
-    closeViewer() {
-        this.isViewerOpen = false;
+    closeZoomView() {
+        this.isZoomViewOpen = false;
         document.removeEventListener('keydown', this.boundHandleKeyPress);
     }
 
-    // Navigation methods for single document viewer
+    // Navigation methods for zoom view
     nextDocument() {
         if (this.hasNext) {
             this.currentIndex++;
@@ -81,19 +81,12 @@ export default class ViewDocument extends LightningElement {
         }
     }
 
-    jumpToDocument(event) {
-        const index = parseInt(event.currentTarget.dataset.index);
-        if (index >= 0 && index < this.documents.length) {
-            this.currentIndex = index;
-        }
-    }
-
     toggleFullscreen() {
         this.isFullscreen = !this.isFullscreen;
     }
 
     handleKeyPress(event) {
-        if (!this.isViewerOpen) return;
+        if (!this.isZoomViewOpen) return;
 
         switch(event.key) {
             case 'ArrowLeft':
@@ -106,33 +99,13 @@ export default class ViewDocument extends LightningElement {
                 break;
             case 'Escape':
                 event.preventDefault();
-                this.closeViewer();
-                break;
-            case 'Home':
-                event.preventDefault();
-                this.jumpToFirst();
-                break;
-            case 'End':
-                event.preventDefault();
-                this.jumpToLast();
+                this.closeZoomView();
                 break;
             case 'f':
             case 'F':
                 event.preventDefault();
                 this.toggleFullscreen();
                 break;
-        }
-    }
-
-    jumpToFirst() {
-        if (this.hasDocuments) {
-            this.currentIndex = 0;
-        }
-    }
-
-    jumpToLast() {
-        if (this.hasDocuments) {
-            this.currentIndex = this.documents.length - 1;
         }
     }
 
@@ -165,19 +138,20 @@ export default class ViewDocument extends LightningElement {
         return this.hasDocuments && this.currentIndex > 0;
     }
 
-    get documentCounter() {
-        return this.hasDocuments ? `Document ${this.currentIndex + 1} of ${this.documents.length}` : 'No documents';
-    }
     get cannotShowPrevious() {
-    return !this.hasPrevious;
+        return !this.hasPrevious;
     }
 
     get cannotShowNext() {
         return !this.hasNext;
     }
 
-    get viewerClass() {
-        return this.isFullscreen ? 'slds-modal slds-fade-in-open viewer-fullscreen' : 'slds-modal slds-fade-in-open viewer-normal';
+    get documentCounter() {
+        return this.hasDocuments ? `Document ${this.currentIndex + 1} of ${this.documents.length}` : 'No documents';
+    }
+
+    get zoomViewClass() {
+        return this.isFullscreen ? 'slds-modal slds-fade-in-open zoom-view-fullscreen' : 'slds-modal slds-fade-in-open zoom-view-normal';
     }
 
     get fullscreenIcon() {
@@ -186,19 +160,6 @@ export default class ViewDocument extends LightningElement {
 
     get fullscreenTitle() {
         return this.isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen';
-    }
-
-    get thumbnailItems() {
-        if (!this.hasDocuments) return [];
-        
-        return this.documents.map((doc, index) => {
-            return {
-                key: doc.DocumentId,
-                doc: doc,
-                index: index,
-                className: index === this.currentIndex ? 'thumbnail-item thumbnail-active' : 'thumbnail-item'
-            };
-        });
     }
 
     disconnectedCallback() {
