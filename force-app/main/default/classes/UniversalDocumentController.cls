@@ -11,23 +11,48 @@ public with sharing class UniversalDocumentController {
             
             // Query based on object type
             if(objectType == 'Account') {
-                // Account logic
-                List<ReceivedDocument> receivedDocs = [
-                    SELECT Id, Name, Document_Type__c, Status__c, 
-                           CreatedDate, CreatedBy.Name, CreatedBy.Id,
-                           Description__c, Customer_Unique_Id__c
-                    FROM ReceivedDocument 
-                    WHERE Related_Account__c = :recordId 
-                    ORDER BY CreatedDate
-                ];
-                
-                // Get all Files linked to these ReceivedDocument records
-                Set<Id> receivedDocIds = new Set<Id>();
-                for(ReceivedDocument doc : receivedDocs) {
-                    receivedDocIds.add(doc.Id);
-                }
-                
-                // Query Files linked to ReceivedDocument records
+                wrappers = getReceivedDocumentsWithFiles('Related_Account__c', recordId);
+            } else if(objectType == 'Case') {
+                wrappers = getReceivedDocumentsWithFiles('Related_Case__c', recordId);
+            } else if(objectType == 'Lead') {
+                wrappers = getReceivedDocumentsWithFiles('Related_Lead__c', recordId);
+            } else if(objectType == 'Opportunity') {
+                wrappers = getReceivedDocumentsWithFiles('Related_Opportunity__c', recordId);
+            } else {
+                // For other objects, use standard ContentDocumentLink approach
+                wrappers = getStandardFiles(recordId);
+            }
+            
+            return wrappers;
+            
+        } catch (Exception e) {
+            throw new AuraHandledException('Error loading documents: ' + e.getMessage());
+        }
+    }
+    
+    private static List<DocumentWrapper> getReceivedDocumentsWithFiles(String relationshipField, String recordId) {
+        List<DocumentWrapper> wrappers = new List<DocumentWrapper>();
+        
+        // Build dynamic SOQL query for ReceivedDocument
+        String query = 'SELECT Id, Name, Document_Type__c, Status__c, ' +
+                      'CreatedDate, CreatedBy.Name, CreatedBy.Id, ' +
+                      'Description__c, Customer_Unique_Id__c ' +
+                      'FROM ReceivedDocument ' +
+                      'WHERE ' + relationshipField + ' = :recordId ' +
+                      'ORDER BY CreatedDate';
+        
+        List<ReceivedDocument> receivedDocs = Database.query(query);
+        
+        // Only proceed if we have ReceivedDocument records
+        if(!receivedDocs.isEmpty()) {
+            // Get all Files linked to these ReceivedDocument records
+            Set<Id> receivedDocIds = new Set<Id>();
+            for(ReceivedDocument doc : receivedDocs) {
+                receivedDocIds.add(doc.Id);
+            }
+            
+            // Only query ContentDocumentLink if we have ReceivedDocument IDs
+            if(!receivedDocIds.isEmpty()) {
                 List<ContentDocumentLink> fileLinks = [
                     SELECT ContentDocumentId, ContentDocument.Title, 
                            ContentDocument.FileExtension, ContentDocument.ContentSize,
@@ -49,31 +74,37 @@ public with sharing class UniversalDocumentController {
                     ContentDocumentLink fileLink = filesByReceivedDocId.get(doc.Id);
                     wrappers.add(new DocumentWrapper(doc, fileLink));
                 }
-                
             } else {
-                // For other objects, use standard ContentDocumentLink approach
-                List<ContentDocumentLink> fileLinks = [
-                    SELECT ContentDocumentId, ContentDocument.Title, 
-                           ContentDocument.FileExtension, ContentDocument.ContentSize,
-                           ContentDocument.CreatedDate, ContentDocument.CreatedBy.Name,
-                           LinkedEntityId
-                    FROM ContentDocumentLink 
-                    WHERE LinkedEntityId = :recordId
-                    ORDER BY ContentDocument.CreatedDate
-                ];
-                
-                for(ContentDocumentLink link : fileLinks) {
-                    wrappers.add(new DocumentWrapper(link));
-                }
+                // If no ReceivedDocument IDs, return empty wrappers
+                return new List<DocumentWrapper>();
             }
-            
-            return wrappers;
-            
-        } catch (Exception e) {
-            throw new AuraHandledException('Error loading documents: ' + e.getMessage());
         }
+        // If no ReceivedDocuments found, return empty list
+        return wrappers;
     }
     
+    private static List<DocumentWrapper> getStandardFiles(String recordId) {
+        List<DocumentWrapper> wrappers = new List<DocumentWrapper>();
+        
+        // For other objects, use standard ContentDocumentLink approach
+        List<ContentDocumentLink> fileLinks = [
+            SELECT ContentDocumentId, ContentDocument.Title, 
+                   ContentDocument.FileExtension, ContentDocument.ContentSize,
+                   ContentDocument.CreatedDate, ContentDocument.CreatedBy.Name,
+                   LinkedEntityId
+            FROM ContentDocumentLink 
+            WHERE LinkedEntityId = :recordId
+            ORDER BY ContentDocument.CreatedDate
+        ];
+        
+        for(ContentDocumentLink link : fileLinks) {
+            wrappers.add(new DocumentWrapper(link));
+        }
+        
+        return wrappers;
+    }
+    
+    // Your existing DocumentWrapper class remains the same
     public class DocumentWrapper {
         @AuraEnabled public String DocumentId { get; set; }
         @AuraEnabled public String Title { get; set; }
