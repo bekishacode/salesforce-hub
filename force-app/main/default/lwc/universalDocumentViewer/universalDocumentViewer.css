@@ -12,7 +12,7 @@
     transition: all 0.3s ease;
     cursor: pointer;
     overflow: hidden;
-    height: 380px; /* Reduced height */
+    height: 380px; /*Reduced height */
     display: flex;
     flex-direction: column;
 }
@@ -253,7 +253,7 @@ button:focus {
     align-items: center;
 }
 
-/* Zoom Image Preview (UNCHANGED) */
+/* Zoom Image Preview */
 .zoom-image-preview {
     width: 100%;
     height: 100%;
@@ -275,7 +275,7 @@ button:focus {
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
-/* Zoom PDF Preview (UNCHANGED) */
+/* Zoom PDF Preview*/
 .zoom-pdf-preview {
     width: 100%;
     height: 100%;
@@ -289,7 +289,7 @@ button:focus {
     border: none;
 }
 
-/* Zoom File Preview for other types (UNCHANGED) */
+/* Zoom File Preview for other types*/
 .zoom-file-preview {
     width: 100%;
     height: 100%;
@@ -303,7 +303,7 @@ button:focus {
     border: none;
 }
 
-/* Zoom Placeholder (UNCHANGED) */
+/* Zoom Placeholder */
 .zoom-file-placeholder {
     text-align: center;
     padding: 2rem;
@@ -317,7 +317,7 @@ button:focus {
     align-items: center;
 }
 
-/* Fullscreen specific styles (UNCHANGED) */
+/* Fullscreen specific styles */
 .zoom-view-fullscreen .zoom-image-preview {
     padding: 3rem;
     background: #FFFFFF;

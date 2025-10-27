@@ -1,0 +1,244 @@
+<template>
+    <lightning-card>
+        <div slot="title" class="slds-grid slds-grid_vertical-align-center">
+            <lightning-icon 
+                icon-name={headerIcon} 
+                size="small" 
+                class="slds-m-right_x-small">
+            </lightning-icon>
+            <span>{headerLabel}</span>
+        </div>
+        
+        <div class="slds-p-horizontal_medium slds-p-vertical_small">
+            <!-- Message Display -->
+            <div class="slds-m-bottom_medium">
+                <p class="slds-text-body_regular">{message}</p>
+            </div>
+            
+            <!-- Status Message with Live Countdown -->
+            <template if:true={statusMessage}>
+                <div class="slds-m-bottom_medium">
+                    <div class={statusMessageClass}>
+                        <template if:true={isButtonDisabled}>
+                            <lightning-icon 
+                                icon-name="utility:clock" 
+                                size="x-small" 
+                                class="slds-m-right_x-small">
+                            </lightning-icon>
+                        </template>
+                        <template if:false={isButtonDisabled}>
+                            <lightning-icon 
+                                icon-name="utility:info" 
+                                size="x-small" 
+                                class="slds-m-right_x-small">
+                            </lightning-icon>
+                        </template>
+                        <span class="slds-text-body_small">{statusMessage}</span>
+                        <template if:true={isButtonDisabled}>
+                            <div class="slds-text-heading_small slds-m-top_x-small">
+                                <strong>{timeUntilReset}</strong>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+            
+            <!-- Main Action Button -->
+            <template if:true={showMainButton}>
+                <div class="slds-text-align_center">
+                    <lightning-button
+                        label={retryButtonLabel}
+                        variant={buttonVariant}
+                        disabled={isButtonDisabled}
+                        onclick={handleRetry}
+                        class="slds-m-bottom_small">
+                    </lightning-button>
+                </div>
+            </template>
+            
+            <!-- No inline OTP or KYC sections here, they are in modals below -->
+            
+            <!-- Error Message Display -->
+            <template if:true={showError}>
+                <div class="slds-m-bottom_medium">
+                    <div class="slds-box slds-theme_error">
+                        <p>{errorMessage}</p>
+                    </div>
+                    <div class="slds-text-align_center slds-m-top_small">
+                        <lightning-button
+                            label="Retry"
+                            variant="brand"
+                            onclick={handleErrorRetry}>
+                        </lightning-button>
+                    </div>
+                </div>
+            </template>
+            
+            <!-- Rate Limit Info -->
+            <template if:true={showRateLimit}>
+                <div class="slds-text-align_center">
+                    <div class="slds-text-body_small slds-text-color_weak">
+                        <lightning-icon 
+                            icon-name="utility:clock" 
+                            size="xx-small" 
+                            class="slds-m-right_xx-small">
+                        </lightning-icon>
+                        Rate limit: {MAX_ATTEMPTS} attempts per {TIME_WINDOW_MINUTES} minutes
+                    </div>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+
+    <!-- OTP Modal -->
+    <template if:true={showOtpModal}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- Modal Header -->
+                <header class="slds-modal__header">
+                    <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">Enter OTP</h2>
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleCancelOtp}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small"></lightning-icon>
+                    </button>
+                </header>
+
+                <!-- Modal Body -->
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <template if:true={otpProcessing}>
+                        <div class="slds-is-relative slds-p-around_medium">
+                            <lightning-spinner alternative-text="Processing..." size="small"></lightning-spinner>
+                        </div>
+                    </template>
+                    <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="otp-input">Please enter the OTP sent to your registered mobile number</label>
+                        <div class="slds-form-element__control">
+                            <lightning-input 
+                                type="text" 
+                                id="otp-input"
+                                value={otpValue}
+                                onchange={handleOtpChange}
+                                pattern="[0-9]{6}"
+                                message-when-pattern-mismatch="Please enter a valid 6-digit OTP"
+                                required>
+                            </lightning-input>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={handleCancelOtp}>Cancel</button>
+                    <button class="slds-button slds-button_brand" onclick={handleOtpVerification}>Verify OTP</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- KYC Details Modal -->
+    <template if:true={showKycModal}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-02" aria-modal="true" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 id="modal-heading-02" class="slds-modal__title slds-hyphenate"> Fayda Verification Details</h2>
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleCloseKycModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small"></lightning-icon>
+                    </button>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <div class="slds-grid slds-wrap slds-gutters">
+                        <div class="slds-col slds-size_1-of-2">
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <label class="slds-form-element__label">Name (English)</label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">{kycDetails.outputEngLanguage}</div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <label class="slds-form-element__label">Name (Amharic)</label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">{kycDetails.outputAmpLanguage}</div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <label class="slds-form-element__label">Email Address</label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">{kycDetails.outputEmail}</div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <label class="slds-form-element__label">Mobile Number</label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">{kycDetails.phoneNumber}</div>
+                                </div>
+                            </div>
+                             <div class="slds-form-element slds-m-bottom_small">
+                                <label class="slds-form-element__label">Date Of Birth</label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">{kycDetails.outputDob}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <label class="slds-form-element__label">Gender (English)</label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">{kycDetails.outputEngGender}</div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <label class="slds-form-element__label">Gender (Amharic)</label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">{kycDetails.outputAmpGender}</div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <label class="slds-form-element__label">Region/City</label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">{kycDetails.outputRegionCity}</div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <label class="slds-form-element__label">Sub City</label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">{kycDetails.outputSubCity}</div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <label class="slds-form-element__label">Woreda</label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">{kycDetails.outputWoreda}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_brand" onclick={handleCloseKycModal}>Close</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Error Modal -->
+    <template if:true={errorMessage}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Error</h2>
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleErrorRetry}>
+                        <lightning-icon icon-name="utility:close" size="small" alternative-text="close" variant="inverse"></lightning-icon>
+                    </button>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <div class="slds-text-color_error">{errorMessage}</div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={handleErrorRetry}>Close</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

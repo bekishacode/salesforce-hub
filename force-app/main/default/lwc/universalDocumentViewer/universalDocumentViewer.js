@@ -12,10 +12,12 @@ export default class UniversalDocumentViewer extends LightningElement {
     @track isFullscreen = false;
 
     boundHandleKeyPress = null;
+    boundHandleClickOutside = null; //Store reference to click outside handler
 
     connectedCallback() {
         this.loadDocuments();
         this.boundHandleKeyPress = this.handleKeyPress.bind(this);
+        this.boundHandleClickOutside = this.handleClickOutside.bind(this); //Bind click outside handler
     }
 
     loadDocuments() {
@@ -110,12 +112,28 @@ export default class UniversalDocumentViewer extends LightningElement {
             this.isZoomViewOpen = true;
             this.isFullscreen = false;
             document.addEventListener('keydown', this.boundHandleKeyPress);
+            // NEW: Add click outside listener with a small delay to avoid immediate trigger
+            setTimeout(() => {
+                document.addEventListener('click', this.boundHandleClickOutside);
+            }, 100);
         }
     }
 
     closeZoomView() {
         this.isZoomViewOpen = false;
         document.removeEventListener('keydown', this.boundHandleKeyPress);
+        document.removeEventListener('click', this.boundHandleClickOutside); // NEW: Remove click outside listener
+    }
+
+  //Handle click outside the zoom container
+    handleClickOutside(event) {
+        // Get the modal container (the actual modal content, not the backdrop)
+        const modalContainer = this.template.querySelector('.slds-modal__container');
+        
+        // Check if click is outside the modal container
+        if (modalContainer && !modalContainer.contains(event.target)) {
+            this.closeZoomView();
+        }
     }
 
     // Navigation methods for zoom view
@@ -264,6 +282,7 @@ export default class UniversalDocumentViewer extends LightningElement {
 
     disconnectedCallback() {
         document.removeEventListener('keydown', this.boundHandleKeyPress);
+        document.removeEventListener('click', this.boundHandleClickOutside); // NEW: Clean up click outside listener
     }
 
     // Handle record ID changes
