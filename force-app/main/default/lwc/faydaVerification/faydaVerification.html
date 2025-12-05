@@ -1,0 +1,208 @@
+<template>
+    <div class="fayda-wrapper">
+        <lightning-card title="Fayda Verification" icon-name="utility:identity_confirm">
+            <div class="slds-p-around_medium fayda-container">
+                
+                <!-- Error Display -->
+                <template if:true={errorMessage}>
+                    <div class="slds-notice slds-notice_alert slds-theme_error slds-m-bottom_small">
+                        <div class="slds-notice__content">
+                            <lightning-icon icon-name="utility:error" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                            <span>{errorMessage}</span>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Verify Client Button -->
+                <template if:true={showVerifyButton}>
+                    <div class="slds-text-align_center">
+                        <lightning-button
+                            label={buttonLabel}
+                            variant="brand"
+                            onclick={handleVerificationClick}
+                            disabled={isButtonDisabled}
+                            class="verify-btn">
+                        </lightning-button>
+                        <div class="slds-m-top_x-small slds-text-color_weak">
+                            {statusMessage}
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Try Again Button -->
+                <template if:true={showTryAgainButton}>
+                    <div class="slds-text-align_center">
+                        <lightning-button
+                            label={buttonLabel}
+                            variant="brand"
+                            onclick={handleVerificationClick}
+                            disabled={isButtonDisabled}
+                            class="retry-btn">
+                        </lightning-button>
+                        <div class="slds-m-top_x-small slds-text-color_weak">
+                            {statusMessage}
+                        </div>
+                        <div if:true={rateLimitExceeded} class="slds-m-top_x-small slds-text-color_error">
+                            Rate limit exceeded. Try again in {timeRemainingFormatted}
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Verified Status -->
+                <template if:true={showVerifiedStatus}>
+                    <div class="slds-text-align_center verified-status">
+                        <lightning-icon
+                            icon-name="utility:check"
+                            size="large"
+                            class="slds-icon-text-success">
+                        </lightning-icon>
+                        <div class="slds-m-top_small">
+                            <strong>Verified</strong>
+                        </div>
+                        <div class="slds-m-top_x-small slds-text-color_weak">
+                            {statusMessage}
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Loading State -->
+                <template if:true={isLoading}>
+                    <div class="slds-text-align_center">
+                        <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                        <div class="slds-m-top_small slds-text-color_weak">
+                            Processing verification...
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Rate Limit Info -->
+                <template if:true={showVerifiedStatus}>
+                    <div class="slds-text-align_center slds-m-top_small">
+                        <div class="slds-text-body_small slds-text-color_weak">
+                            <lightning-icon 
+                                icon-name="utility:clock" 
+                                size="xx-small" 
+                                class="slds-m-right_xx-small">
+                            </lightning-icon>
+                            Rate limit: {MAX_ATTEMPTS} attempts per {TIME_WINDOW_MINUTES} minutes
+                        </div>
+                    </div>
+                </template>
+
+            </div>
+        </lightning-card>
+
+        <!-- Confirmation Modal -->
+        <template if:true={showConfirmationModal}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                                title="Close" onclick={closeConfirmationModal}>
+                            <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h2 class="slds-text-heading_medium slds-hyphenate">Confirm Verification Details</h2>
+                    </header>
+                    
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <!-- User Information -->
+                        <div class="slds-m-bottom_large">
+                            <h3 class="slds-text-heading_small slds-m-bottom_small">User Information</h3>
+                            <div class="slds-grid slds-wrap">
+                                <template for:each={formattedUserInfo} for:item="info">
+                                    <div key={info.label} class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                        <div class="slds-text-title">{info.label}</div>
+                                        <div class="slds-text-body_regular">{info.value}</div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Instructions -->
+                        <div class="slds-notice slds-notice_info">
+                            <div class="slds-notice__content">
+                                <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                <span>Please review the information above. Click <strong>Confirm</strong> to update the lead or <strong>Cancel</strong> to revert.</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" 
+                                onclick={handleCancel} 
+                                disabled={isLoading}>
+                            Cancel Verification
+                        </button>
+                        <button class="slds-button slds-button_brand" 
+                                onclick={handleConfirm} 
+                                disabled={isLoading}>
+                            <lightning-icon if:true={isLoading} icon-name="utility:spinner" size="x-small" class="slds-button__icon slds-button__icon_left"></lightning-icon>
+                            {confirmButtonLabel}
+                        </button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- Verification Details Modal (Similar to KYC Modal) -->
+        <template if:true={showDetailsModal}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-text-heading_medium slds-hyphenate">Fayda Verification Successful</h2>
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                                title="Close" onclick={closeDetailsModal}>
+                            <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                    </header>
+                    
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-grid slds-wrap slds-gutters">
+                            <div class="slds-col slds-size_1-of-2">
+                                <template for:each={formattedUserInfo} for:item="info">
+                                    <div key={info.label} class="slds-form-element slds-m-bottom_small">
+                                        <label class="slds-form-element__label">{info.label}</label>
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-form-element__static">{info.value}</div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_brand" onclick={closeDetailsModal}>Close</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- Error Modal -->
+        <template if:true={showErrorModal}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-text-heading_medium">Verification Error</h2>
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                                title="Close" onclick={closeErrorModal}>
+                            <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-text-color_error">{errorMessage}</div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" onclick={closeErrorModal}>Close</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </div>
+</template>

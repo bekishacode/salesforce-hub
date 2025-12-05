@@ -1,0 +1,103 @@
+  <script>
+    // Function to set record type based on client type and location type
+function setRecordType() {
+    const clientType = document.getElementById("00NPu000008bX0T").value;
+    const recordTypeField = document.getElementById("recordType");
+    
+    // Get the selected location type
+    const locationTypeRadios = document.getElementsByName("locationType");
+    let locationType = "";
+    
+    for (let radio of locationTypeRadios) {
+        if (radio.checked) {
+            locationType = radio.value;
+            break;
+        }
+    }
+    
+    console.log('Client Type:', clientType, 'Location Type:', locationType);
+    
+    if (locationType === "Outline" && clientType !== "Merchant") {
+        recordTypeField.value = "012Pu000003B1QU"; // Outline Branch Lead
+        console.log('Record Type set to: Outline Branch Lead');
+    } else if (clientType === "Merchant") {
+        recordTypeField.value = "012Pu0000037XaK"; // Merchant Lead
+        console.log('Record Type set to: Merchant Lead');
+    } else {
+        recordTypeField.value = "012QH000002mmMp"; // General
+        console.log('Record Type set to: General');
+    }
+    
+    return recordTypeField.value; // Return the set value
+}
+
+// Initialize record type on page load and set up event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const clientTypeDropdown = document.getElementById("00NPu000008bX0T");
+    
+    if (clientTypeDropdown) {
+        setRecordType();
+        clientTypeDropdown.addEventListener('change', setRecordType);
+    }
+    
+    // Add event listeners for location type radio buttons
+    const locationTypeRadios = document.querySelectorAll('input[name="locationType"]');
+    locationTypeRadios.forEach(radio => {
+        radio.addEventListener('change', setRecordType);
+    });
+});
+
+document.getElementById("webToLeadForm").addEventListener("submit", function (e) {
+    // PREVENT DEFAULT FIRST to handle submission manually
+    e.preventDefault();
+    
+    console.log('=== FORM SUBMISSION STARTED ===');
+    const submitButton = document.getElementById("submitButton");
+    const buttonText = document.getElementById("buttonText");
+    
+    // Show submitting state
+    submitButton.disabled = true;
+    buttonText.textContent = "Submitting...";
+    
+    // Store reference to the form
+    const form = this;
+    
+    // Set record type and get the final value
+    const finalRecordType = setRecordType();
+    console.log('Final record type to be submitted:', finalRecordType);
+    
+    // Double verification - directly set the value again
+    document.getElementById("recordType").value = finalRecordType;
+    console.log('Double-check recordType value:', document.getElementById("recordType").value);
+    
+    const clientType = document.getElementById("00NPu000008bX0T").value;
+    const phoneValue = document.getElementById("userPhone").value;
+
+    // Clear both hidden fields first
+    document.getElementById("mobile").value = "";
+    document.getElementById("phone").value = "";
+
+    // Assign phone number to correct Salesforce field
+    if (clientType === "Individual") {
+        document.getElementById("mobile").value = phoneValue;
+    } else {
+        document.getElementById("phone").value = phoneValue;
+    }
+  
+    
+    // Set the retURL to your Marketing Cloud thank you page
+    document.getElementById('retURL').value = 'https://mcnpkmnf81rz7s-0mxl8ql8p6yz8.pub.sfmc-content.com/cemiyvptill?status=success';
+    
+    // Final verification before actual submission
+    console.log('=== FINAL VALUES BEFORE SUBMISSION ===');
+    console.log('recordType:', document.getElementById("recordType").value);
+    console.log('clientType:', clientType);
+    console.log('locationType:', document.querySelector('input[name="locationType"]:checked').value);
+    
+    // Submit the form programmatically after a small delay to ensure all values are set
+    setTimeout(() => {
+        console.log('Submitting form now with recordType:', document.getElementById("recordType").value);
+        form.submit(); // Use the stored form reference instead of 'this'
+    }, 100);
+});
+</script>

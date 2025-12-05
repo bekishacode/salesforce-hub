@@ -1,0 +1,275 @@
+<template>
+    <div class="conversation-container" onclick={handleClickOutside}>
+       <!-- Updated Header Section -->
+        <header class="conversation-header">
+            <div class="header-left">
+                <lightning-icon icon-name="custom:custom19" size="small" class="chat-icon"></lightning-icon>
+                <span class="header-title">{headerTitle}</span>
+            </div>
+            
+            <div class="header-center">
+                <lightning-icon icon-name="standard:user" size="small" class="agent-icon"></lightning-icon>
+                <span class="agent-name">{displayAgentName}</span>
+            </div>
+            
+            <div class="header-right">
+                <lightning-button-icon 
+                    icon-name="utility:refresh" 
+                    alternative-text="Refresh"
+                    onclick={refreshConversation}
+                    variant="border-filled"
+                    class="header-button">
+                </lightning-button-icon>
+                
+                <template if:true={thread.id}>
+                    <template if:true={hasActiveSession}>
+                        <lightning-button 
+                            label="End Session" 
+                            variant="destructive"
+                            onclick={endSession}
+                            class="end-session-button">
+                        </lightning-button>
+                    </template>
+                    <template if:false={hasActiveSession}>
+                        <lightning-button 
+                            label="Start Session" 
+                            variant="brand"
+                            onclick={startSession}
+                            class="start-session-button">
+                        </lightning-button>
+                    </template>
+                </template>
+            </div>
+        </header>
+
+        <!-- Error State -->
+        <template if:true={hasError}>
+            <div class="error-container">
+                <lightning-icon icon-name="utility:error" size="medium" class="error-icon"></lightning-icon>
+                <div class="error-content">
+                    <h3>Unable to Load Conversation</h3>
+                    <p>{errorMessage}</p>
+                    <template if:true={isLead}>
+                        <p class="help-text">To enable Telegram communication for this Lead:</p>
+                        <ul class="help-list">
+                            <li>Ensure the Lead has a valid phone number</li>
+                            <li>The phone number should match a Contact with Telegram registration</li>
+                            <li>Or convert the Lead to a Contact and register via Telegram bot</li>
+                        </ul>
+                    </template>
+                    <template if:true={isCase}>
+                        <p class="help-text">To enable Telegram communication for this Case:</p>
+                        <ul class="help-list">
+                            <li>Ensure the Case is associated with a Contact</li>
+                            <li>The Contact must have registered via Telegram bot</li>
+                            <li>Check that the Contact has a valid Telegram Chat ID</li>
+                        </ul>
+                    </template>
+                </div>
+            </div>
+        </template>
+
+        <!-- Add a waiting state -->
+        <template if:true={isWaitingForRecord}>
+            <div class="loading-container">
+                <lightning-spinner alternative-text="Waiting for record..." size="medium"></lightning-spinner>
+                <p>Loading record information...</p>
+            </div>
+        </template>
+
+        <!-- Loading State -->
+        <template if:true={isLoading}>
+            <div class="loading-container">
+                <lightning-spinner alternative-text="Loading conversation..." size="medium"></lightning-spinner>
+                <p>Loading conversation...</p>
+            </div>
+        </template>
+
+        <!-- Conversation Body -->
+        <template if:false={isLoading}>
+            <template if:true={hasConversationData}>
+                <div class="conversation-body">
+                    
+                    <!-- No Thread/No Chat ID Message -->
+                    <template if:false={thread.id}>
+                        <div class="no-session-message">
+                            <lightning-icon icon-name="utility:chat" size="large"></lightning-icon>
+                            <h3>No Telegram Connection</h3>
+                            <p>This contact/lead doesn't have a Telegram Chat ID. Ask them to start a conversation with your Telegram bot first.</p>
+                        </div>
+                    </template>
+
+                    <!-- No Active Session Message -->
+                    <template if:true={thread.id}>
+                        <template if:false={hasActiveSession}>
+                            <div class="no-session-message">
+                                <lightning-icon icon-name="utility:chat" size="large"></lightning-icon>
+                                <h3>No Active Session</h3>
+                                <p>Start a conversation session to begin messaging</p>
+                                <lightning-button 
+                                    label="Start Conversation" 
+                                    variant="brand"
+                                    onclick={startSession}>
+                                </lightning-button>
+                            </div>
+                        </template>
+
+                        <!-- Messages Container -->
+                        <template if:true={hasActiveSession}>
+                            <div class="message-container">
+                                
+                                <!-- No Messages State - FIXED: Use getter instead of expression -->
+                                <template if:true={hasNoMessages}>
+                                    <div class="no-messages">
+                                        <p>No messages yet. Start the conversation!</p>
+                                    </div>
+                                </template>
+
+                                <template for:each={messages} for:item="msg">
+                                    <div key={msg.id} class="message-wrapper">
+                                        
+                                        <!-- System Messages -->
+                                        <template if:true={msg.isSystem}>
+                                            <div class="system-message">
+                                                <div class="system-bubble">
+                                                    <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                                                    <span>{msg.text}</span>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Inbound Messages (Customer) -->
+                                        <template if:true={msg.isInbound}>
+                                            <div class="message-row message-inbound">
+                                                <div class="message-avatar customer-avatar">
+                                                    <lightning-icon icon-name="standard:customer" size="small"></lightning-icon>
+                                                </div>
+                                                <div class="message-bubble customer-bubble">
+                                                    <div class="message-text">{msg.text}</div>
+                                                    <div if:true={msg.hasAttachment} class="message-attachment">
+                                                        <lightning-icon icon-name="utility:attach" size="x-small"></lightning-icon>
+                                                        <a href={msg.attachmentUrl} target="_blank">Attachment</a>
+                                                    </div>
+                                                    <div class="message-time">{msg.messageTime}</div>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Outbound Messages (Agent) -->
+                                        <!-- Outbound Messages (Agent) -->
+                                        <template if:true={msg.isOutbound}>
+                                            <div class="message-row message-outbound">
+                                                <div class="message-bubble agent-bubble">
+                                                    <div class="message-text">{msg.text}</div>
+                                                    <div if:true={msg.hasAttachment} class="message-attachment">
+                                                        <lightning-icon icon-name="utility:attach" size="x-small"></lightning-icon>
+                                                        <a href={msg.attachmentUrl} target="_blank">Attachment</a>
+                                                    </div>
+                                                    <div class="message-meta">
+                                                        <span class="message-time">{msg.messageTime}</span>
+                                                        <!-- FIXED: Use pre-computed statusIcon -->
+                                                        <lightning-icon 
+                                                            icon-name={msg.statusIcon} 
+                                                            size="xx-small" 
+                                                            class="status-icon">
+                                                        </lightning-icon>
+                                                    </div>
+                                                </div>
+                                                <div class="message-avatar agent-avatar">
+                                                    <lightning-icon icon-name="standard:user" size="small"></lightning-icon>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Action Bar -->
+                            <div class="action-bar">
+                                
+                                <!-- Attachment Preview -->
+                                <template if:true={hasAttachment}>
+                                    <div class="attachment-preview">
+                                        <div class="attachment-info">
+                                            <lightning-icon icon-name="utility:attach" size="small"></lightning-icon>
+                                            <span class="file-name">{fileName}</span>
+                                        </div>
+                                        <lightning-button-icon 
+                                            icon-name="utility:close" 
+                                            alternative-text="Remove attachment"
+                                            onclick={clearAttachment}
+                                            class="remove-attachment">
+                                        </lightning-button-icon>
+                                    </div>
+                                </template>
+
+                                <!-- Input Area -->
+                                <div class="input-area">
+                                    <!-- Left Actions -->
+                                    <div class="input-actions">
+                                        <lightning-button-icon 
+                                            icon-name="utility:attach" 
+                                            alternative-text="Attach file"
+                                            onclick={handleFileClick}
+                                            class="action-button">
+                                        </lightning-button-icon>
+                                        
+                                        <lightning-button-icon 
+                                            icon-name="utility:emoji" 
+                                            alternative-text="Add emoji"
+                                            onclick={toggleEmojiPicker}
+                                            class="action-button">
+                                        </lightning-button-icon>
+
+                                        <!-- Hidden File Input -->
+                                        <input type="file" class="file-input" onchange={handleFileChange} accept="image/*,.pdf,.doc,.docx,.txt"/>
+                                    </div>
+
+                                    <!-- Message Input -->
+                                    <div class="message-input-container">
+                                        <textarea 
+                                            class="message-input" 
+                                            placeholder="Type your message..."
+                                            rows="1"
+                                            value={messageText}
+                                            oninput={handleMessageInput}
+                                            onkeydown={handleKeyPress}></textarea>
+                                    </div>
+
+                                    <!-- Send Button -->
+                                    <div class="send-button-container">
+                                        <lightning-button-icon 
+                                            icon-name="utility:send" 
+                                            alternative-text="Send message"
+                                            onclick={sendMessage}
+                                            disabled={isSendDisabled}
+                                            class={sendButtonClass}>
+                                        </lightning-button-icon>
+                                    </div>
+                                </div>
+
+                                <!-- Emoji Picker -->
+                                <template if:true={showEmojiPicker}>
+                                    <div class="emoji-picker">
+                                        <div class="emoji-grid">
+                                            <template for:each={emojis} for:item="emoji">
+                                                <span 
+                                                    key={emoji} 
+                                                    class="emoji" 
+                                                    data-emoji={emoji}
+                                                    onclick={handleEmojiSelect}>
+                                                    {emoji}
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+            </template>
+        </template>
+    </div>
+</template>

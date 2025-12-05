@@ -1,0 +1,107 @@
+<template>
+    <div class="container">
+        <div class="header">
+            <h2 class="title">Capture Customer Signature</h2>
+            <div class="subtitle">Please sign using your finger or stylus</div>
+        </div>
+
+        <!-- Account Info Display -->
+        <template if:true={accountId}>
+            <div class="account-info">
+                <div class="account-badge">
+                    <lightning-icon icon-name="standard:account" size="small"></lightning-icon>
+                    <span class="account-text">Linked to Account: <strong>{accountName}</strong></span>
+                </div>
+            </div>
+        </template>
+
+        <!-- Customer Info -->
+        <div class="customer-info"> 
+            <lightning-input
+                label="Document Name"
+                value={documentName}
+                onchange={handleDocumentNameChange}
+                placeholder="e.g., Account Opening Form"
+                class="info-input"
+                required>
+            </lightning-input>
+        </div>
+
+        <!-- Canvas -->
+        <div class="canvas-section">
+            <div class="canvas-label">Sign Here:</div>
+            <div class="canvas-wrapper">
+                <canvas class="signature-pad" lwc:dom="manual"></canvas>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <lightning-button 
+                    label="Clear" 
+                    onclick={clearSignature}
+                    variant="neutral"
+                    icon-name="utility:clear"
+                    class="control-btn">
+                </lightning-button>
+                
+                <lightning-button 
+                    label="Undo" 
+                    onclick={undo}
+                    variant="neutral"
+                    disabled={disableUndo}
+                    icon-name="utility:undo"
+                    class="control-btn">
+                </lightning-button>
+                
+                <lightning-button 
+                    label="Redo" 
+                    onclick={redo}
+                    variant="neutral"
+                    disabled={disableRedo}
+                    icon-name="utility:redo"
+                    class="control-btn">
+                </lightning-button>
+            </div>
+
+            <div class="pen-controls">
+                <div class="pen-setting">
+                    <span class="pen-label">Pen Color:</span>
+                    <input type="color" value="#000000" onchange={handleColorChange} class="color-picker">
+                </div>
+                <div class="pen-setting">
+                    <span class="pen-label">Pen Size:</span>
+                    <input type="range" min="1" max="10" value="3" onchange={handleSizeChange} class="size-slider">
+                    <span class="size-label">{penSize}px</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="actions">
+            <lightning-button 
+                label="Save Signature" 
+                variant="brand"
+                onclick={saveSignature}
+                disabled={disableSave}
+                class="save-button">
+            </lightning-button>
+        </div>
+
+        <!-- Status -->
+        <template if:true={statusMessage}>
+            <div class={statusClass}>
+                {statusMessage}
+            </div>
+        </template>
+
+        <!-- Loading -->
+        <template if:true={isLoading}>
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>Saving signature and creating document...</div>
+            </div>
+        </template>
+    </div>
+</template>

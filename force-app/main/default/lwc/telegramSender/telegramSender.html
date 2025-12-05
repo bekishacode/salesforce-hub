@@ -1,0 +1,77 @@
+<template>
+    <lightning-card title="Send to Telegram" icon-name="action:share">
+        <div class="slds-p-around_medium">
+            
+            <!-- Record Info -->
+            <div if:true={recordInfo.name} class="slds-m-bottom_medium">
+                <div class="slds-text-heading_small slds-m-bottom_x-small">Sending for: <strong>{recordDisplayName}</strong></div>
+                <div class="slds-text-body_small slds-text-color_weak">
+                    Type: {recordInfo.type} | Status: {recordInfo.stage}
+                </div>
+            </div>
+
+            <!-- Message Type Selection -->
+            <div class="slds-form-element slds-m-bottom_medium">
+                <label class="slds-form-element__label" for="messageType">Message Type</label>
+                <div class="slds-form-element__control">
+                    <div class="slds-select_container">
+                        <select 
+                            id="messageType" 
+                            class="slds-select" 
+                            value={messageType}
+                            onchange={handleTypeChange}
+                            disabled={isSending}>
+                            <template for:each={typeOptions} for:item="option">
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Message Input -->
+            <div if:true={showCustomMessage} class="slds-form-element slds-m-bottom_medium">
+                <label class="slds-form-element__label" for="customMessage">Custom Message</label>
+                <div class="slds-form-element__control">
+                    <textarea 
+                        id="customMessage"
+                        class="slds-textarea" 
+                        placeholder="Enter your custom message for Telegram..."
+                        value={customMessage}
+                        onchange={handleCustomMessageChange}
+                        disabled={isSending}></textarea>
+                </div>
+            </div>
+
+            <!-- Send Button -->
+            <div class="slds-m-bottom_medium">
+                <lightning-button 
+                    label="Send to Telegram" 
+                    variant="brand"
+                    onclick={handleSend}
+                    disabled={isSending}
+                    class="slds-size_full">
+                </lightning-button>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div if:true={isSending} class="slds-align_absolute-center slds-m-bottom_medium">
+                <lightning-spinner alternative-text="Sending..."></lightning-spinner>
+                <span class="slds-m-left_small">Sending to Telegram...</span>
+            </div>
+
+            <!-- Result Message -->
+            <div if:true={resultMessage} class={resultClass}>
+                {resultMessage}
+            </div>
+
+            <!-- Information -->
+            <div class="slds-box slds-box_x-small slds-theme_info">
+                <div class="slds-text-body_small">
+                    <strong>Note:</strong> Make sure your Python bot and localtunnel are running.
+                </div>
+            </div>
+
+        </div>
+    </lightning-card>
+</template>
